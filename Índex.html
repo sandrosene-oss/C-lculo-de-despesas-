@@ -1,1 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Despesas Familiares</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal p-4 md:p-8">
+
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-blue-600 p-6 text-white text-center">
+        <h1 class="text-3xl font-bold uppercase tracking-wide">Gestão Financeira Familiar</h1>
+    </div>
+
+    <div class="p-6">
+        <!-- Rendas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <label for="income-1" class="block text-gray-700 font-bold mb-2">Minha Renda (R$):</label>
+                <input type="number" id="income-1" placeholder="Ex: 3000" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div>
+                <label for="income-2" class="block text-gray-700 font-bold mb-2">Renda da Esposa (R$):</label>
+                <input type="number" id="income-2" placeholder="Ex: 3000" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+        </div>
+
+        <!-- Adicionar Despesas -->
+        <div class="border-t border-gray-200 pt-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Lançar Despesa:</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                <div class="md:col-span-1">
+                    <label for="expense-name" class="block text-gray-700 font-bold mb-2">Nome da Despesa:</label>
+                    <input type="text" id="expense-name" placeholder="Ex: Conta de Luz" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="md:col-span-1">
+                    <label for="expense-value" class="block text-gray-700 font-bold mb-2">Valor (R$):</label>
+                    <input type="number" id="expense-value" placeholder="Ex: 150" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="md:col-span-1 flex items-end">
+                    <button onclick="addExpense()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full">
+                        Adicionar Despesa
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabela de Despesas -->
+            <div class="overflow-x-auto mt-4">
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 text-left border-b">Despesa</th>
+                            <th class="py-3 px-6 text-right border-b">Valor</th>
+                            <th class="py-3 px-6 text-center border-b">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expense-list" class="text-gray-600 text-sm font-light">
+                        <!-- Despesas serão inseridas aqui -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-gray-100 text-gray-800 font-bold">
+                            <td class="py-3 px-6 text-left border-b">Total das Despesas:</td>
+                            <td class="py-3 px-6 text-right border-b" id="total-expenses">R$ 0,00</td>
+                            <td class="py-3 px-6 border-b"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="text-center mt-6">
+            <button onclick="calculate()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg">
+                Calcular Divisão Proporcional
+            </button>
+        </div>
+
+        <!-- Resultados -->
+        <div id="results" class="hidden mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Resultados do Rateio:</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-4 bg-white rounded shadow-sm border-l-4 border-blue-500">
+                    <h3 class="font-bold text-lg text-blue-600 mb-2">Minha Contribuição:</h3>
+                    <p class="text-gray-700">Porcentagem: <span id="percent-1" class="font-bold">0%</span></p>
+                    <p class="text-gray-700">Valor a Pagar: <span id="value-1" class="font-bold">R$ 0,00</span></p>
+                </div>
+                <div class="p-4 bg-white rounded shadow-sm border-l-4 border-green-500">
+                    <h3 class="font-bold text-lg text-green-600 mb-2">Contribuição da Esposa:</h3>
+                    <p class="text-gray-700">Porcentagem: <span id="percent-2" class="font-bold">0%</span></p>
+                    <p class="text-gray-700">Valor a Pagar: <span id="value-2" class="font-bold">R$ 0,00</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let expenses = [];
+    let totalExpensesValue = 0;
+
+    function addExpense() {
+        const nameInput = document.getElementById('expense-name');
+        const valueInput = document.getElementById('expense-value');
+
+        if (nameInput.value === '' || valueInput.value === '') {
+            alert('Preencha os campos da despesa!');
+            return;
+        }
+
+        const expense = {
+            id: Date.now(),
+            name: nameInput.value,
+            value: parseFloat(valueInput.value)
+        };
+
+        expenses.push(expense);
+        totalExpensesValue += expense.value;
+
+        updateExpenseTable();
+
+        nameInput.value = '';
+        valueInput.value = '';
+        nameInput.focus();
+    }
+
+    function removeExpense(id) {
+        const index = expenses.findIndex(exp => exp.id === id);
+        if (index !== -1) {
+            totalExpensesValue -= expenses[index].value;
+            expenses.splice(index, 1);
+            updateExpenseTable();
+        }
+    }
+
+    function updateExpenseTable() {
+        const list = document.getElementById('expense-list');
+        list.innerHTML = '';
+
+        expenses.forEach(exp => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-gray-200 hover:bg-gray-50';
+
+            row.innerHTML = `
+                <td class="py-3 px-6 text-left font-medium text-gray-800">${exp.name}</td>
+                <td class="py-3 px-6 text-right">R$ ${exp.value.toFixed(2)}</td>
+                <td class="py-3 px-6 text-center">
+                    <button onclick="removeExpense(${exp.id})" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash-alt"></i> Excluir
+                    </button>
+                </td>
+            `;
+            list.appendChild(row);
+        });
+
+        document.getElementById('total-expenses').innerText = `R$ ${totalExpensesValue.toFixed(2)}`;
+    }
+
+    function calculate() {
+        const income1 = parseFloat(document.getElementById('income-1').value);
+        const income2 = parseFloat(document.getElementById('income-2').value);
+
+        if (isNaN(income1) || isNaN(income2)) {
+            alert('Por favor, preencha as rendas primeiro!');
+            return;
+        }
+
+        const totalIncome = income1 + income2;
+
+        if (totalIncome === 0) {
+            alert('A renda total não pode ser zero!');
+            return;
+        }
+
+        const percent1 = income1 / totalIncome;
+        const percent2 = income2 / totalIncome;
+
+        const value1 = totalExpensesValue * percent1;
+        const value2 = totalExpensesValue * percent2;
+
+        document.getElementById('percent-1').innerText = `${(percent1 * 100).toFixed(2)}%`;
+        document.getElementById('percent-2').innerText = `${(percent2 * 100).toFixed(2)}%`;
+
+        document.getElementById('value-1').innerText = `R$ ${value1.toFixed(2)}`;
+        document.getElementById('value-2').innerText = `R$ ${value2.toFixed(2)}`;
+
+        document.getElementById('results').classList.remove('hidden');
+    }
+</script>
+
+</body>
+</html>
 
